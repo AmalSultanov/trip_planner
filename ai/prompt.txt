@@ -1,0 +1,65 @@
+Generate several %s-day travel plans for visiting %s with a budget of $%s.
+The plans should focus on the following interests: %s.
+
+Response Requirements:
+- The response must be in JSON format.
+- The response should follow this exact structure:
+
+{
+  "intro": "A brief introduction about the trip, destination, and what to expect.",
+  "tips": [
+    {
+      "id": 1,
+      "category": "Category name (e.g., Accommodation, Food, Transportation, etc.)",
+      "advice": "Useful travel advice relevant to the category."
+    },
+    ...other tips...
+  ],
+  "plans": [
+    {
+      "id": 1,
+      "title": "Plan title summarizing the itinerary.",
+      "days": [
+        {
+          "id": 1,
+          "title": "Title summarizing the day's focus with budget estimate in $",
+          "activities": [
+            {
+              "id": 1,
+              "day_period": "Morning",
+              "description": "Activity description."
+            },
+            {
+              "id": 2,
+              "day_period": "Afternoon",
+              "description": "Activity description."
+            },
+            {
+              "id": 3,
+              "day_period": "Evening",
+              "description": "Activity description."
+            }
+          ]
+        },
+        ...other days if more than 1...
+      ]
+    },
+    ...other plans...
+  ],
+  "budget_tips": [
+    {
+      "id": 1,
+      "title": "Short title of the tip for staying under budget",
+      "description": "Explanation of how it helps travelers save money."
+    },
+    ...other tips...
+  ],
+  "outro": "A concluding sentence wrapping up the travel plan."
+}
+
+Additional Instructions:
+- The "intro" and "outro" should be natural and engaging.
+- "budget_tips" should provide practical ways to save money while traveling.
+- Ensure the response is well-formatted JSON with proper escaping.
+- The JSON should be valid and easily parsable by a backend system.
+Return only the JSON. Do not include any extra text and symbols outside the JSON response.
