@@ -14,11 +14,15 @@ class RegistrationForm(FlaskForm):
                        ])
     password = PasswordField('Password',
                              validators=[DataRequired('Fill in this field')])
-    confirm_password = PasswordField('Confirm Password',
-                                     validators=[
-                                         DataRequired('Fill in this field'),
-                                         EqualTo('password')
-                                     ])
+    confirm_password = PasswordField(
+        'Confirm Password',
+        validators=[
+            DataRequired('Fill in this field'),
+            EqualTo(
+                'password',
+                message='Passwords must match, enter identical ones.')
+        ]
+    )
     button = SubmitField('Register')
 
 

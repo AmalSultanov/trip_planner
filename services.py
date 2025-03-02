@@ -1,12 +1,56 @@
+from typing import Any
+
+import markdown
+import requests
 from jinja2 import Template
 from sqlalchemy.orm import joinedload
+from weasyprint import HTML
+from werkzeug.local import LocalProxy
 
 from ai.validators import validate_ai_response
+from config import geonames_username
 from database import get_db
 from database.models import Intro, Outro, Tip, Plan, Day, Activity, BudgetTip
 
 
-def save_response_to_db(response):
+def fetch_geonames_data(query: str, max_rows: int) -> dict[str, Any]:
+    url = f'http://api.geonames.org/searchJSON?q={query}&featureClass=P&maxRows={max_rows}&username={geonames_username}'
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        return {}
+
+
+def fetch_autocomplete_results(query: str) -> list[str]:
+    data = fetch_geonames_data(query, max_rows=5)
+
+    return [
+        f'{city["name"]}, {city["countryName"]}'
+        for city in data.get('geonames', [])
+    ]
+
+
+def fetch_destination_validation(dest: str) -> bool:
+    data = fetch_geonames_data(dest, max_rows=1)
+    return bool(data.get('geonames'))
+
+
+def extract_fields(request: LocalProxy) -> tuple[str, str, str, str]:
+    destination = request.form['destination']
+    travel_days = request.form['travel_days']
+    budget = request.form['budget']
+    interests = request.form.getlist('interests')
+    interests_str = ', '.join(interests) if interests \
+        else 'General sightseeing'
+
+    return travel_days, destination, budget, interests_str
+
+
+def save_response_to_db(response: dict[str, Any]) -> list[Plan] | None:
     saved_plans = []
 
     try:
@@ -47,9 +91,9 @@ def save_response_to_db(response):
     return saved_plans
 
 
-def save_intro(description):
+def save_intro(desc: str) -> int:
     db = next(get_db())
-    intro = Intro(description=description)
+    intro = Intro(description=desc)
 
     db.add(intro)
     db.commit()
@@ -58,7 +102,7 @@ def save_intro(description):
     return intro.id
 
 
-def save_tip(plan_id, category, advice):
+def save_tip(plan_id: int, category: str, advice: str) -> None:
     db = next(get_db())
     tip = Tip(plan_id=plan_id, category=category, advice=advice)
 
@@ -66,7 +110,7 @@ def save_tip(plan_id, category, advice):
     db.commit()
 
 
-def save_plan_to_db(title, intro_id, outro_id):
+def save_plan_to_db(title: str, intro_id: int, outro_id: int) -> int:
     db = next(get_db())
     plan = Plan(title=title, intro_id=intro_id, outro_id=outro_id)
 
@@ -77,7 +121,7 @@ def save_plan_to_db(title, intro_id, outro_id):
     return plan.id
 
 
-def save_day_to_db(plan_id, title):
+def save_day_to_db(plan_id: int, title: str) -> int:
     db = next(get_db())
     day = Day(plan_id=plan_id, title=title)
 
@@ -88,27 +132,25 @@ def save_day_to_db(plan_id, title):
     return day.id
 
 
-def save_activity_to_db(day_id, day_period, description):
+def save_activity_to_db(day_id: int, day_period: str, desc: str) -> None:
     db = next(get_db())
-    activity = Activity(day_id=day_id, day_period=day_period,
-                        description=description)
+    activity = Activity(day_id=day_id, day_period=day_period, description=desc)
 
     db.add(activity)
     db.commit()
 
 
-def save_budget_tip(plan_id, title, description):
+def save_budget_tip(plan_id: int, title: str, desc: str) -> None:
     db = next(get_db())
-    budget_tip = BudgetTip(plan_id=plan_id, title=title,
-                           description=description)
+    budget_tip = BudgetTip(plan_id=plan_id, title=title, description=desc)
 
     db.add(budget_tip)
     db.commit()
 
 
-def save_outro(description):
+def save_outro(desc: str) -> int:
     db = next(get_db())
-    outro = Outro(description=description)
+    outro = Outro(description=desc)
 
     db.add(outro)
     db.commit()
@@ -117,7 +159,7 @@ def save_outro(description):
     return outro.id
 
 
-def get_plan_from_db(plan_id):
+def get_plan_from_db(plan_id: int) -> Plan:
     db = next(get_db())
 
     return db.query(Plan).filter_by(id=plan_id).options(
@@ -129,32 +171,39 @@ def get_plan_from_db(plan_id):
     ).first()
 
 
-def generate_markdown(plan):
+def generate_pdf(plan: Plan) -> bytes:
+    plan_md = generate_markdown(plan)
+    plan_html = markdown.markdown(plan_md)
+
+    return HTML(string=plan_html).write_pdf()
+
+
+def generate_markdown(plan: Plan) -> str:
     template = Template("""
 # {{ plan.title }}
 
-## Введение
+## Intro
 {{ plan.intro.description }}
 
-## Полезные советы
+## Travel Tips
 {% for tip in plan.tips %}
 - **{{ tip.category }}:** {{ tip.advice }}
 {% endfor %}
 
-## План поездки
+## Plans
 {% for day in plan.days %}
-### День {{ loop.index }}: {{ day.title }}
+### Day {{ loop.index }}: {{ day.title }}
 {% for activity in day.activities %}
 - **{{ activity.day_period }}:** {{ activity.description }}
 {% endfor %}
 {% endfor %}
 
-## Бюджетные советы
+## Budget Tips
 {% for budget_tip in plan.budget_tips %}
 - **{{ budget_tip.title }}:** {{ budget_tip.description }}
 {% endfor %}
 
-## Заключение
+## Outro
 {{ plan.outro.description }}
 """)
 
