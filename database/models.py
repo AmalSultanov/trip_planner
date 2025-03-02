@@ -24,6 +24,12 @@ class User(Base):
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password, password)
 
+    def __repr__(self) -> str:
+        return f'<User {self.id}: {self.username}>'
+
+    def __str__(self) -> str:
+        return f'User {self.id}: {self.username}, {self.email}'
+
 
 class Intro(Base):
     __tablename__ = 'intros'
@@ -31,6 +37,12 @@ class Intro(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f'<Intro {self.id}: {self.description[:50]}...>'
+
+    def __str__(self) -> str:
+        return f'Intro {self.id}: {self.description[:50]}...'
 
 
 class Tip(Base):
@@ -41,6 +53,12 @@ class Tip(Base):
     category = Column(String, nullable=False)
     advice = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f'<Tip {self.id}: {self.category}>'
+
+    def __str__(self) -> str:
+        return f'Tip {self.id}: {self.category}'
 
 
 class Plan(Base):
@@ -58,6 +76,12 @@ class Plan(Base):
     budget_tips = relationship('BudgetTip', lazy='subquery')
     outro = relationship('Outro', lazy='subquery', foreign_keys=[outro_id])
 
+    def __repr__(self) -> str:
+        return f'<Plan {self.id}: {self.title}>'
+
+    def __str__(self) -> str:
+        return f'Plan {self.id}: {self.title}'
+
 
 class Day(Base):
     __tablename__ = 'days'
@@ -70,6 +94,12 @@ class Day(Base):
     # allows Day to access all related Activity records
     activities = relationship('Activity', lazy='subquery')
 
+    def __repr__(self) -> str:
+        return f'<Day {self.id}: {self.title}>'
+
+    def __str__(self) -> str:
+        return f'Day {self.id}: {self.title}'
+
 
 class Activity(Base):
     __tablename__ = 'activities'
@@ -79,6 +109,12 @@ class Activity(Base):
     day_period = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f'<Activity {self.id}: {self.day_period}>'
+
+    def __str__(self) -> str:
+        return f'Activity {self.id}: {self.day_period}'
 
 
 class BudgetTip(Base):
@@ -90,6 +126,12 @@ class BudgetTip(Base):
     description = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    def __repr__(self) -> str:
+        return f'<BudgetTip {self.id}: {self.title}>'
+
+    def __str__(self) -> str:
+        return f'BudgetTip {self.id}: {self.title}'
+
 
 class Outro(Base):
     __tablename__ = 'outros'
@@ -97,3 +139,9 @@ class Outro(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f'<Outro {self.id}: {self.description[:50]}...>'
+
+    def __str__(self) -> str:
+        return f'Outro {self.id}: {self.description[:50]}...'
