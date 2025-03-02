@@ -4,7 +4,8 @@ from flask import (
     redirect,
     url_for,
     render_template,
-    make_response
+    make_response,
+    Response
 )
 from flask_jwt_extended import (
     unset_jwt_cookies
@@ -22,7 +23,7 @@ users_bp = Blueprint('users', __name__, url_prefix='/users')
 
 
 @users_bp.route('/register', methods=['GET', 'POST'])
-def register():
+def register() -> Response | str:
     form = RegistrationForm()
 
     if form.validate_on_submit():
@@ -40,7 +41,7 @@ def register():
 
 
 @users_bp.route('/login', methods=['GET', 'POST'])
-def login():
+def login() -> Response | str:
     form = LoginForm()
 
     if form.validate_on_submit():
@@ -54,7 +55,7 @@ def login():
 
 
 @users_bp.route('/logout')
-def logout():
+def logout() -> Response:
     response = make_response(redirect(url_for('home')))
     unset_jwt_cookies(response)
     flash('You have logged out.', 'info')
