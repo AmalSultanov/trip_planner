@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 import markdown
@@ -12,6 +13,8 @@ from config import geonames_username
 from database import get_db
 from database.models import Intro, Outro, Tip, Plan, Day, Activity, BudgetTip
 
+logger = logging.getLogger(__name__)
+
 
 def fetch_geonames_data(query: str, max_rows: int) -> dict[str, Any]:
     url = f'http://api.geonames.org/searchJSON?q={query}&featureClass=P&maxRows={max_rows}&username={geonames_username}'
@@ -22,6 +25,7 @@ def fetch_geonames_data(query: str, max_rows: int) -> dict[str, Any]:
 
         return response.json()
     except requests.exceptions.RequestException as e:
+        logger.error(f'GeoNames API request failed: {e}')
         return {}
 
 
@@ -55,40 +59,57 @@ def save_response_to_db(response: dict[str, Any]) -> list[Plan] | None:
 
     try:
         if not validate_ai_response(response):
-            print('AI response validation failed.')
+            logger.error('AI response validation failed.')
             return
 
         intro_id = save_intro(response.get('intro'))
         outro_id = save_outro(response.get('outro'))
-
-        plans_ids = []
-        for plan in response.get('plans'):
-            plan_id = save_plan_to_db(plan.get('title'), intro_id, outro_id)
-            plans_ids.append(plan_id)
-
-            for day in plan.get('days'):
-                day_id = save_day_to_db(plan_id, day.get('title'))
-
-                for activity in day.get('activities'):
-                    save_activity_to_db(day_id, activity.get('day_period'),
-                                        activity.get('description'))
+        plans_ids = save_plans_to_db(response.get('plans'), intro_id, outro_id)
+        save_tips_and_budget_tips(response, plans_ids)
 
         for plan_id in plans_ids:
-            for tip in response.get('tips'):
-                save_tip(plan_id, tip.get('category'), tip.get('advice'))
-
-            for budget_tip in response.get('budget_tips'):
-                save_budget_tip(plan_id, budget_tip.get('title'),
-                                budget_tip.get('description'))
-
             saved_plan = get_plan_from_db(plan_id)
             saved_plans.append(saved_plan)
 
     except Exception as e:
-        print(f'Error saving AI response: {e}')
+        logger.error(f'Error saving AI response: {e}')
         return
 
     return saved_plans
+
+
+def save_plans_to_db(
+        plans: list[dict[str, Any]],
+        intro_id: int,
+        outro_id: int
+) -> list[int]:
+    plans_ids = []
+
+    for plan in plans:
+        plan_id = save_plan_to_db(plan.get('title'), intro_id, outro_id)
+        plans_ids.append(plan_id)
+
+        for day in plan.get('days'):
+            day_id = save_day_to_db(plan_id, day.get('title'))
+
+            for activity in day.get('activities'):
+                save_activity_to_db(day_id, activity.get('day_period'),
+                                    activity.get('description'))
+
+    return plans_ids
+
+
+def save_tips_and_budget_tips(
+        response: dict[str, Any],
+        plans_ids: list[int]
+) -> None:
+    for plan_id in plans_ids:
+        for tip in response.get('tips'):
+            save_tip(plan_id, tip.get('category'), tip.get('advice'))
+
+        for budget_tip in response.get('budget_tips'):
+            save_budget_tip(plan_id, budget_tip.get('title'),
+                            budget_tip.get('description'))
 
 
 def save_intro(desc: str) -> int:
@@ -162,13 +183,19 @@ def save_outro(desc: str) -> int:
 def get_plan_from_db(plan_id: int) -> Plan:
     db = next(get_db())
 
-    return db.query(Plan).filter_by(id=plan_id).options(
+    plan = db.query(Plan).filter_by(id=plan_id).options(
         joinedload(Plan.days).joinedload(Day.activities),
         joinedload(Plan.tips),
         joinedload(Plan.budget_tips),
         joinedload(Plan.intro),
         joinedload(Plan.outro)
     ).first()
+
+    if plan:
+        for day in plan.days:
+            day.activities.sort(key=lambda activity: activity.id)
+
+    return plan
 
 
 def generate_pdf(plan: Plan) -> bytes:
