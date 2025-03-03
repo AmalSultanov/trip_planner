@@ -167,3 +167,4 @@ instance/*
 !instance/.gitignore
 
 .DS_Store
+logs/
