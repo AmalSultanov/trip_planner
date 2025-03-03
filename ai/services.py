@@ -1,10 +1,12 @@
 import json
+import logging
 from typing import Any
 
 from google import genai
 
 from config import api_key
 
+logger = logging.getLogger(__name__)
 client = genai.Client(api_key=api_key)
 
 
@@ -21,9 +23,11 @@ def generate_ai_response(
 
         return str_to_dict(cleaned_text)
     except RuntimeError as e:
+        logger.error(f'Runtime error: {e}')
         return {'error': str(e)}
     except Exception as e:
-        return {'error': f'An internal error occurred: {str(e)}'}
+        logger.error(f'An internal error occurred: {e}')
+        return {'error': f'An internal error occurred: {e}'}
 
 
 def load_prompt_file(
@@ -46,7 +50,8 @@ def call_ai_model(prompt: str) -> str:
         )
         return response.text if response.text else ''
     except Exception as e:
-        raise RuntimeError(f'AI model request failed: {str(e)}')
+        logger.error(f'AI model request failed: {e}')
+        raise RuntimeError(f'AI model request failed: {e}')
 
 
 def clean_ai_response(response: str) -> dict[str, Any]:
@@ -57,4 +62,5 @@ def str_to_dict(cleaned_text: str) -> dict[str, Any]:
     try:
         return json.loads(cleaned_text)
     except json.JSONDecodeError:
+        logger.error(f'Invalid JSON from AI: {cleaned_text}')
         return {'error': 'Invalid JSON from AI'}

@@ -1,4 +1,6 @@
+import logging
 from datetime import timedelta
+from logging.config import dictConfig
 
 from flask import Flask, render_template, request, jsonify, Response
 
@@ -22,8 +24,53 @@ from services import (
 )
 from users.routes import users_bp
 
+dictConfig(
+    {
+        'version': 1,
+        'formatters': {
+            'default': {
+                'format': '{levelname} | {asctime:s} | {name} | {message}',
+                'style': '{'
+            },
+            'verbose': {
+                'format': '{levelname} | {asctime:s} | {name} | '
+                          '{module}.py (line {lineno:d}) | {funcName} | {message}',
+                'style': '{'
+            }
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'stream': 'ext://sys.stdout',
+                'formatter': 'default',
+                'level': 'INFO'
+            },
+            'file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': 'logs/logs.log',
+                'maxBytes': 5 * 1024 * 1024,
+                'backupCount': 3,
+                'formatter': 'verbose',
+                'level': 'WARNING'
+            }
+        },
+        'root': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'file']
+        },
+        'loggers': {
+            'flask.app': {
+                'level': 'WARNING',
+                'handlers': ['file'],
+                'propagate': False
+            }
+        }
+    }
+)
+
 app = Flask(__name__)
 app.register_blueprint(users_bp)
+app.logger.setLevel(logging.DEBUG)
 
 app.config['CSRF_ENABLED'] = True
 app.config['SECRET_KEY'] = flask_secret_key
@@ -38,6 +85,8 @@ Base.metadata.create_all(engine)
 
 jwt.init_app(app)
 bcrypt.init_app(app)
+
+logger = logging.getLogger(__name__)
 
 
 @app.route('/')
@@ -73,6 +122,7 @@ def get_plans() -> str:
         response = generate_ai_response(*extract_fields(request))
 
         if 'error' in response:
+            logger.error(f'Error: {response['error']}')
             return render_template('plans.html',
                                    error='Error occurred, try again')
 

@@ -1,3 +1,4 @@
+import logging
 from typing import Generator
 
 from dotenv import load_dotenv
@@ -7,6 +8,8 @@ from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from config import sql_database_uri
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 SQL_DATABASE_URI = sql_database_uri
 
@@ -27,8 +30,9 @@ def get_db() -> Generator[Session, None, None]:
 
     try:
         yield db
-    except Exception:
+    except Exception as e:
         db.rollback()
+        logger.error(f'Database transaction rolled back due to error: {e}')
         raise
     finally:
         db.close()
