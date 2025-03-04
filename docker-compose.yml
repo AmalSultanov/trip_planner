@@ -2,11 +2,11 @@ services:
   trip_planner_web:
     build: .
     container_name: trip_planner_web
-    command: flask run --host=0.0.0.0 --port=5000
+    command: flask run --debug --host=0.0.0.0 --port=5000
     volumes:
       - .:/app
     ports:
-      - "5000:5000"
+      - "5001:5000"
     env_file:
       - .env
     depends_on:
