@@ -76,7 +76,7 @@ The **AI-Powered Travel Itinerary Planner** is a Flask-based web application tha
 
    - **Create a Virtual Environment:**
      ```bash
-     python -m venv venv
+     python3 -m venv venv
      ```
    - **Activate the Virtual Environment:**
      - On Windows:
@@ -91,9 +91,10 @@ The **AI-Powered Travel Itinerary Planner** is a Flask-based web application tha
      ```bash
      pip install -r requirements.txt
      ```
+   - **Start Your Local PostgreSQL Server**
    - **Run the Application:**
      ```bash
-     flask run --host=0.0.0.0 --port=5000
+     flask run
      ```
 
 4. **Access the Application:**
