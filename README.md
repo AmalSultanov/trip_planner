@@ -70,6 +70,8 @@ The **AI-Powered Travel Itinerary Planner** is a Flask-based web application tha
     docker compose up --build
     ```
    
+    The app will be available at **[http://127.0.0.1:5001/](http://localhost:5001/)**.
+
    **Or, install manually:**
    
    If you prefer to run the application without Docker, follow these steps:
@@ -96,10 +98,8 @@ The **AI-Powered Travel Itinerary Planner** is a Flask-based web application tha
      ```bash
      flask run
      ```
-
-4. **Access the Application:**
-
-   The app will be available at **[http://127.0.0.1:5001/](http://localhost:5001/)**.
+   
+    The app will be available at **[http://127.0.0.1:5000/](http://localhost:5000/)**.
 
 ## API Endpoints
 
