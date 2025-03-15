@@ -57,7 +57,7 @@ The **AI-Powered Travel Itinerary Planner** is a Flask-based web application tha
      ```
     - Visit [GeoNames](https://www.geonames.org) to register and obtain your username, which will be the value for `GEONAMES_USERNAME`.
     - Visit [Google Gemini API](https://ai.google.dev/gemini-api/docs/api-key) to get your API Key, which will be the value for `API_KEY`.
-    - The values for `FLASK_SECRET_KEY` and `FLASK_JWT_SECRET_KEY` can be generated using `secrets.token_bytes([nbytes=None])`.
+    - The values for `FLASK_SECRET_KEY` and `FLASK_JWT_SECRET_KEY` can be generated using `secrets.token_hex([nbytes=None])`.
     - The value for `SQL_DATABASE_URI` should be in the format:  
       ```
       postgresql://user:password@host:port/db_name
